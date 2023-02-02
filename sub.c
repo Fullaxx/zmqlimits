@@ -106,7 +106,7 @@ static void check_payload(char *hex, int plen)
 
 #ifdef DEBUG
 	int n = 0;
-	char reincarnation[3000];
+	char reincarnation[4096];
 	memset(reincarnation, 0, sizeof(reincarnation));
 	for(i=0; i<blob.size; i++) {
 		n += sprintf(&reincarnation[n], "%02x", blob.data[i]);
