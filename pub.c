@@ -97,7 +97,50 @@ static void publish_mpm(struct timespec *now)
 	g_zmqmsgs++;
 }
 
-static void publisher_loop()
+static void publish_json(struct timespec *now)
+{
+	int i, n;
+	cJSON *root;
+	char *hex;
+	char *minjson;
+	char zbuf[1500];
+	unsigned int dst;
+	unsigned int temp;
+
+	root = cJSON_CreateObject();
+
+	temp = rand();
+	dst = (temp % g_maxdst) + 1;
+	(void)cJSON_AddNumberToObject(root, "Destination", dst);
+
+	// Set the Timestamp
+	snprintf(zbuf, sizeof(zbuf), "%ld.%09ld", now->tv_sec, now->tv_nsec);
+	(void)cJSON_AddStringToObject(root, "Timestamp", zbuf);
+
+	// Mock Binary Data
+	for(i=0; i<1024; i+=4) {
+		temp = rand();
+		memcpy(&zbuf[i], &temp, 4);
+	}
+
+	n = 0;
+	hex = malloc((1500*2)+1);
+	for(i=0; i<1500; i++) {
+		n+=sprintf(hex+n, "%02x", (unsigned char)zbuf[i]);
+	}
+	(void)cJSON_AddNumberToObject(root, "PayloadLen", 1500);
+	(void)cJSON_AddStringToObject(root, "PayloadHex", hex);
+	free(hex);
+
+	minjson = cJSON_Print(root);
+	cJSON_Minify(minjson);
+	as_zmq_pub_send(g_pktpub, minjson, strlen(minjson)+1, 0);
+	g_zmqmsgs++;
+	cJSON_Delete(root);
+	free(minjson);
+}
+
+static void publisher_loop(void)
 {
 	long this_sec;
 	struct timespec now;
@@ -110,6 +153,7 @@ static void publisher_loop()
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		if(msgsthissec < g_pps) {
 			if(g_mpm) { publish_mpm(&now); }
+			if(g_json) { publish_json(&now); }
 			msgsthissec++;
 		} else {
 			// Wait for the second hand to rollover
