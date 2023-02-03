@@ -13,7 +13,7 @@ static void check_payload(char *hex, int plen)
 	for(int i=0; i<blob.size; i++) {
 		n += sprintf(&reincarnation[n], "%02x", blob.data[i]);
 	}
-	if(strcmp(hex, reincarnation) != 0) { fprintf(stderr, "DIFFERENT!\n"); g_shutdown = 1; exit(1); }
+	if(strcmp(hex, reincarnation) != 0) { fprintf(stderr, "Reincarnation Validation Failed!\n"); g_shutdown = 1; exit(1); }
 #endif
 
 	// Do something with the data
@@ -40,10 +40,10 @@ static void handle_json(zmq_mf_t **mpa, void *user_data)
 		if(dst_obj->valueint == myaddr) { decode_this_pkg = 1; }
 	}
 	if(decode_this_pkg) {
+		// Only decode the payload if the message is for me
 		cJSON *plen_obj = cJSON_GetObjectItemCaseSensitive(root, "PayloadLen");
 		cJSON *phex_obj = cJSON_GetObjectItemCaseSensitive(root, "PayloadHex");
 		if(cJSON_IsString(phex_obj) && cJSON_IsNumber(plen_obj)) {
-			// Only decode the payload if the message is for me
 			check_payload(phex_obj->valuestring, plen_obj->valueint);
 		}
 	}
