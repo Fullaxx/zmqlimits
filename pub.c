@@ -82,6 +82,7 @@ static void publisher_loop(void)
 			dst = (r % g_maxdst) + 1;
 			if(g_mpm) { publish_mpm(dst, &now); }
 			if(g_json) { publish_json(dst, &now); }
+			g_zmqmsgs++;
 			msgsthissec++;
 		} else {
 			// Wait for the second hand to rollover

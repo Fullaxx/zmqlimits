@@ -78,6 +78,5 @@ static void publish_mpm(unsigned int dst, struct timespec *now)
 		memcpy(&zbuf[z], &r, 4);
 	}
 	as_zmq_pub_send(g_pktpub, zbuf, sizeof(zbuf), 0);
-	g_zmqmsgs++;
 }
 #endif

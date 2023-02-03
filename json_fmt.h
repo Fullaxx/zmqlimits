@@ -104,7 +104,6 @@ static void publish_json(unsigned int dst, struct timespec *now)
 	char *minjson = cJSON_Print(root);
 	cJSON_Minify(minjson);
 	as_zmq_pub_send(g_pktpub, minjson, strlen(minjson)+1, 0);
-	g_zmqmsgs++;
 
 	// Clean up
 	free(hex);
