@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 		filter[0] = 0;
 		int_array[i-1] = i;
 		if(g_mpm) { snprintf(filter, sizeof(filter), "%d", i); }
-		printf("Starting %2d ...\n", i);
+		printf("Starting SUB %2d ...\n", i);
 		sub = as_zmq_sub_create(g_zmqsockaddr, filter, sub_cb, 0, &int_array[i-1]);
 		if(!sub) {
 			fprintf(stderr, "as_zmq_sub_create(%s) failed!\n", g_zmqsockaddr);
