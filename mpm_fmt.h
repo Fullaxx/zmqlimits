@@ -43,15 +43,11 @@ static void handle_mpm(zmq_mf_t **mpa)
 
 	as_zmq_pub_send(g_pktpub, buf, len, 0);
 */
-static void publish_mpm(struct timespec *now)
+static void publish_mpm(unsigned int dst, struct timespec *now)
 {
 	size_t z;
+	unsigned int r;
 	char zbuf[1500];
-	unsigned int dst;
-	unsigned int temp;
-
-	temp = rand();
-	dst = (temp % g_maxdst) + 1;
 
 	// Set the dst address
 	snprintf(zbuf, sizeof(zbuf), "%u", dst);
@@ -63,8 +59,8 @@ static void publish_mpm(struct timespec *now)
 
 	// Mock Binary Data
 	for(z=0; z<1024; z+=4) {
-		temp = rand();
-		memcpy(&zbuf[z], &temp, 4);
+		r = rand();
+		memcpy(&zbuf[z], &r, 4);
 	}
 	as_zmq_pub_send(g_pktpub, zbuf, sizeof(zbuf), 0);
 	g_zmqmsgs++;

@@ -54,20 +54,16 @@ static void handle_json(zmq_mf_t **mpa, void *user_data)
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifdef PUBCODE
-static void publish_json(struct timespec *now)
+static void publish_json(unsigned int dst, struct timespec *now)
 {
 	int i, n;
 	cJSON *root;
 	char *hex;
 	char *minjson;
+	unsigned int r;
 	char zbuf[1500];
-	unsigned int dst;
-	unsigned int temp;
 
 	root = cJSON_CreateObject();
-
-	temp = rand();
-	dst = (temp % g_maxdst) + 1;
 	(void)cJSON_AddNumberToObject(root, "Destination", dst);
 
 	// Set the Timestamp
@@ -76,8 +72,8 @@ static void publish_json(struct timespec *now)
 
 	// Mock Binary Data
 	for(i=0; i<1024; i+=4) {
-		temp = rand();
-		memcpy(&zbuf[i], &temp, 4);
+		r = rand();
+		memcpy(&zbuf[i], &r, 4);
 	}
 
 	n = 0;

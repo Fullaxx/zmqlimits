@@ -67,6 +67,8 @@ static void sig_handler(int signum)
 static void publisher_loop(void)
 {
 	long this_sec;
+	unsigned int r;
+	unsigned int dst;
 	struct timespec now;
 	unsigned int msgsthissec;
 
@@ -76,8 +78,10 @@ static void publisher_loop(void)
 	while(!g_shutdown) {
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		if(msgsthissec < g_pps) {
-			if(g_mpm) { publish_mpm(&now); }
-			if(g_json) { publish_json(&now); }
+			r = rand();
+			dst = (r % g_maxdst) + 1;
+			if(g_mpm) { publish_mpm(dst, &now); }
+			if(g_json) { publish_json(dst, &now); }
 			msgsthissec++;
 		} else {
 			// Wait for the second hand to rollover
