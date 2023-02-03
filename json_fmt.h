@@ -16,22 +16,29 @@
 */
 
 #ifdef SUBCODE
+
+static inline void dbg_validate_decode(char *hex, bin_pkg_t *blob)
+{
+#ifdef DEBUG
+	int n = 0;
+	char reincarnation[4096];
+	memset(reincarnation, 0, sizeof(reincarnation));
+	for(int i=0; i<blob->size; i++) {
+		n += sprintf(&reincarnation[n], "%02x", blob->data[i]);
+	}
+	if(strcmp(hex, reincarnation) != 0) { fprintf(stderr, "Reincarnation Validation Failed!\n"); g_shutdown = 1; exit(1); }
+#endif
+}
+
 static void check_payload(char *hex, int plen)
 {
 	// Decode our hex payload
 	bin_pkg_t blob = hex2bin(hex);
 	if(!blob.data || (blob.size < 1)) { fprintf(stderr, "hex2bin() failed decode!\n"); g_shutdown = 1; exit(1); }
+	if(blob.size != plen) { fprintf(stderr, "blob.size != plen!\n"); g_shutdown = 1; exit(1); }
 
-	// Check our decode process
-#ifdef DEBUG
-	int n = 0;
-	char reincarnation[4096];
-	memset(reincarnation, 0, sizeof(reincarnation));
-	for(int i=0; i<blob.size; i++) {
-		n += sprintf(&reincarnation[n], "%02x", blob.data[i]);
-	}
-	if(strcmp(hex, reincarnation) != 0) { fprintf(stderr, "Reincarnation Validation Failed!\n"); g_shutdown = 1; exit(1); }
-#endif
+	// Validate the decode process
+	dbg_validate_decode(hex, &blob);
 
 	// Do something with the data
 	check_for_jackpot(blob.data, blob.size);
