@@ -61,84 +61,8 @@ static void sig_handler(int signum)
 	}
 }
 
-/*
-	snprintf(zbuf, sizeof(zbuf), "%u", dst);
-	as_zmq_pub_send(g_pktpub, zbuf, strlen(zbuf)+1, 1);
-
-	snprintf(zbuf, sizeof(zbuf), "%ld.%09ld", ts->tv_sec, ts->tv_usec);
-	as_zmq_pub_send(g_pktpub, zbuf, strlen(zbuf)+1, 1);
-
-	as_zmq_pub_send(g_pktpub, buf, len, 0);
-*/
-static void publish_mpm(struct timespec *now)
-{
-	size_t z;
-	char zbuf[1500];
-	unsigned int dst;
-	unsigned int temp;
-
-	temp = rand();
-	dst = (temp % g_maxdst) + 1;
-
-	// Set the dst address
-	snprintf(zbuf, sizeof(zbuf), "%u", dst);
-	as_zmq_pub_send(g_pktpub, zbuf, strlen(zbuf)+1, 1);
-
-	// Set the Timestamp
-	snprintf(zbuf, sizeof(zbuf), "%ld.%09ld", now->tv_sec, now->tv_nsec);
-	as_zmq_pub_send(g_pktpub, zbuf, strlen(zbuf)+1, 1);
-
-	// Mock Binary Data
-	for(z=0; z<1024; z+=4) {
-		temp = rand();
-		memcpy(&zbuf[z], &temp, 4);
-	}
-	as_zmq_pub_send(g_pktpub, zbuf, sizeof(zbuf), 0);
-	g_zmqmsgs++;
-}
-
-static void publish_json(struct timespec *now)
-{
-	int i, n;
-	cJSON *root;
-	char *hex;
-	char *minjson;
-	char zbuf[1500];
-	unsigned int dst;
-	unsigned int temp;
-
-	root = cJSON_CreateObject();
-
-	temp = rand();
-	dst = (temp % g_maxdst) + 1;
-	(void)cJSON_AddNumberToObject(root, "Destination", dst);
-
-	// Set the Timestamp
-	snprintf(zbuf, sizeof(zbuf), "%ld.%09ld", now->tv_sec, now->tv_nsec);
-	(void)cJSON_AddStringToObject(root, "Timestamp", zbuf);
-
-	// Mock Binary Data
-	for(i=0; i<1024; i+=4) {
-		temp = rand();
-		memcpy(&zbuf[i], &temp, 4);
-	}
-
-	n = 0;
-	hex = malloc((1500*2)+1);
-	for(i=0; i<1500; i++) {
-		n+=sprintf(hex+n, "%02x", (unsigned char)zbuf[i]);
-	}
-	(void)cJSON_AddNumberToObject(root, "PayloadLen", 1500);
-	(void)cJSON_AddStringToObject(root, "PayloadHex", hex);
-	free(hex);
-
-	minjson = cJSON_Print(root);
-	cJSON_Minify(minjson);
-	as_zmq_pub_send(g_pktpub, minjson, strlen(minjson)+1, 0);
-	g_zmqmsgs++;
-	cJSON_Delete(root);
-	free(minjson);
-}
+#include "mpm_fmt.h"
+#include "json_fmt.h"
 
 static void publisher_loop(void)
 {
