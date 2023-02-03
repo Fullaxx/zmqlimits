@@ -20,7 +20,7 @@ unsigned int toInt(char c)
 
 bin_pkg_t hex2bin(char *hex)
 {
-	ssize_t hlen, h=0;
+	ssize_t hlen, h;
 	bin_pkg_t r = { 0, 0 };
 
 	hlen = strlen(hex);
@@ -29,11 +29,12 @@ bin_pkg_t hex2bin(char *hex)
 
 #ifdef DEBUG
 	// Check to make sure we have only hex digits in incoming hex array
-	for(h=0; h<hlen; h++) {
-		if(!isxdigit(hex[h])) { return r; }
+	for(int i=0; i<hlen; i++) {
+		if(!isxdigit(hex[i])) { return r; }
 	}
 #endif
 
+	h = 0;
 	r.size = 0;
 	r.data = malloc(hlen/2);
 	while(hlen > 1) {
