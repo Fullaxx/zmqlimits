@@ -40,6 +40,13 @@ static void check_payload(char *hex, int plen)
 	free(blob.data);
 }
 
+static inline void dbg_print_msg_dst(int dst)
+{
+/*#ifdef DEBUG
+	printf("%d", dst);
+#endif*/
+}
+
 static void handle_json(zmq_mf_t **mpa, void *user_data)
 {
 	zmq_mf_t *json_msg;
@@ -59,6 +66,7 @@ static void handle_json(zmq_mf_t **mpa, void *user_data)
 	}
 	if(decode_this_pkg) {
 		// Only decode the payload if the message is for me
+		dbg_print_msg_dst(dst_obj->valueint);
 		cJSON *plen_obj = cJSON_GetObjectItemCaseSensitive(root, "PayloadLen");
 		cJSON *phex_obj = cJSON_GetObjectItemCaseSensitive(root, "PayloadHex");
 		if(cJSON_IsString(phex_obj) && cJSON_IsNumber(plen_obj)) {
