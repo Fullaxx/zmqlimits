@@ -18,9 +18,11 @@
 #ifdef SUBCODE
 static void check_payload(char *hex, int plen)
 {
+	// Decode our hex payload
 	bin_pkg_t blob = hex2bin(hex);
 	if(!blob.data || (blob.size < 1)) { fprintf(stderr, "hex2bin() failed decode!\n"); g_shutdown = 1; exit(1); }
 
+	// Check our decode process
 #ifdef DEBUG
 	int n = 0;
 	char reincarnation[4096];
@@ -34,6 +36,7 @@ static void check_payload(char *hex, int plen)
 	// Do something with the data
 	check_for_jackpot(blob.data, blob.size);
 
+	// Clean up
 	free(blob.data);
 }
 
@@ -44,7 +47,7 @@ static void handle_json(zmq_mf_t **mpa, void *user_data)
 	json_msg = mpa[0];
 	if(!json_msg) { return; }
 
-	//printf("%s\n", (char *)json_msg->buf);
+	// Unwrap the JSON
 	int decode_this_pkg = 0;
 	int *ident = (int *)user_data;
 	int myaddr = *ident;
@@ -72,13 +75,11 @@ static void handle_json(zmq_mf_t **mpa, void *user_data)
 static void publish_json(unsigned int dst, struct timespec *now)
 {
 	int i, n;
-	cJSON *root;
-	char *hex;
-	char *minjson;
 	unsigned int r;
 	char zbuf[1500];
 
-	root = cJSON_CreateObject();
+	// Create JSON object and insert DST address
+	cJSON *root = cJSON_CreateObject();
 	(void)cJSON_AddNumberToObject(root, "Destination", dst);
 
 	// Set the Timestamp
@@ -92,19 +93,22 @@ static void publish_json(unsigned int dst, struct timespec *now)
 	}
 
 	n = 0;
-	hex = malloc((1500*2)+1);
+	char *hex = malloc((1500*2)+1);
 	for(i=0; i<1500; i++) {
-		n+=sprintf(hex+n, "%02x", (unsigned char)zbuf[i]);
+		n += sprintf(hex+n, "%02x", (unsigned char)zbuf[i]);
 	}
 	(void)cJSON_AddNumberToObject(root, "PayloadLen", 1500);
 	(void)cJSON_AddStringToObject(root, "PayloadHex", hex);
-	free(hex);
 
-	minjson = cJSON_Print(root);
+	// Publish the JSON message
+	char *minjson = cJSON_Print(root);
 	cJSON_Minify(minjson);
 	as_zmq_pub_send(g_pktpub, minjson, strlen(minjson)+1, 0);
 	g_zmqmsgs++;
-	cJSON_Delete(root);
+
+	// Clean up
+	free(hex);
 	free(minjson);
+	cJSON_Delete(root);
 }
 #endif
