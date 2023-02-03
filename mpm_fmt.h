@@ -24,7 +24,7 @@ static void handle_mpm(zmq_mf_t **mpa)
 	if(!ts_msg) { return; }
 	if(!binary_msg) { return; }
 
-	if(binary_msg->size != 1500) { fprintf(stderr, "INVALID SIZE!\n"); exit(1); }
+	if(binary_msg->size != 1500) { fprintf(stderr, "INVALID SIZE!\n"); g_shutdown = 1; exit(1); }
 
 	// Do something with the data
 	check_for_jackpot(binary_msg->buf, binary_msg->size);

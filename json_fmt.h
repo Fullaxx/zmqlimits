@@ -3,10 +3,8 @@
 #ifdef SUBCODE
 static void check_payload(char *hex, int plen)
 {
-	bin_pkg_t blob;
-
-	blob = hex2bin(hex);
-	if(!blob.data || (blob.size < 1)) { fprintf(stderr, "hex2bin() failed decode!\n"); exit(1); }
+	bin_pkg_t blob = hex2bin(hex);
+	if(!blob.data || (blob.size < 1)) { fprintf(stderr, "hex2bin() failed decode!\n"); g_shutdown = 1; exit(1); }
 
 #ifdef DEBUG
 	int n = 0;
@@ -15,7 +13,7 @@ static void check_payload(char *hex, int plen)
 	for(int i=0; i<blob.size; i++) {
 		n += sprintf(&reincarnation[n], "%02x", blob.data[i]);
 	}
-	if(strcmp(hex, reincarnation) != 0) { fprintf(stderr, "DIFFERENT!\n"); exit(1); }
+	if(strcmp(hex, reincarnation) != 0) { fprintf(stderr, "DIFFERENT!\n"); g_shutdown = 1; exit(1); }
 #endif
 
 	// Do something with the data
