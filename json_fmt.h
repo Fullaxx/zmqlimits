@@ -35,14 +35,14 @@ static void handle_json(zmq_mf_t **mpa, void *user_data)
 	int myaddr = *ident;
 	cJSON *root = cJSON_Parse(json_msg->buf);
 	cJSON *dst_obj = cJSON_GetObjectItemCaseSensitive(root, "Destination");
-	cJSON *plen_obj = cJSON_GetObjectItemCaseSensitive(root, "PayloadLen");
-	cJSON *phex_obj = cJSON_GetObjectItemCaseSensitive(root, "PayloadHex");
 	if(cJSON_IsNumber(dst_obj)) {
 		// Check if the message is for me
-		if(plen_obj->valueint == myaddr) { decode_this_pkg = 1; }
+		if(dst_obj->valueint == myaddr) { decode_this_pkg = 1; }
 	}
-	if(cJSON_IsString(phex_obj) && cJSON_IsNumber(plen_obj)) {
-		if(decode_this_pkg) {
+	if(decode_this_pkg) {
+		cJSON *plen_obj = cJSON_GetObjectItemCaseSensitive(root, "PayloadLen");
+		cJSON *phex_obj = cJSON_GetObjectItemCaseSensitive(root, "PayloadHex");
+		if(cJSON_IsString(phex_obj) && cJSON_IsNumber(plen_obj)) {
 			// Only decode the payload if the message is for me
 			check_payload(phex_obj->valuestring, plen_obj->valueint);
 		}
