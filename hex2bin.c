@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef DEBUG
+#include <ctype.h>
+#endif
+
 #include "hex2bin.h"
 
 #ifdef NOSCANF
@@ -19,10 +23,16 @@ bin_pkg_t hex2bin(char *hex)
 	ssize_t hlen, h=0;
 	bin_pkg_t r = { 0, 0 };
 
-	// At the moment we are assuming only hex digits in the incoming hex array
 	hlen = strlen(hex);
 	if(hlen < 2) { return r; }
 	if(hlen % 2 != 0) { return r; }
+
+#ifdef DEBUG
+	// Check to make sure we have only hex digits in incoming hex array
+	for(h=0; h<hlen; h++) {
+		if(!isxdigit(hex[h])) { return r; }
+	}
+#endif
 
 	r.size = 0;
 	r.data = malloc(hlen/2);
