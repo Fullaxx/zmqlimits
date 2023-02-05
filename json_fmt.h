@@ -16,17 +16,16 @@
 */
 
 #ifdef SUBCODE
-
 static inline void dbg_validate_decode(char *hex, bin_pkg_t *blob)
 {
 #ifdef DEBUG
-	int n = 0;
-	char reincarnation[4096];
-	memset(reincarnation, 0, sizeof(reincarnation));
-	for(int i=0; i<blob->size; i++) {
-		n += sprintf(&reincarnation[n], "%02x", blob->data[i]);
+	unsigned int i, n = 0;
+	char *reincarnation = calloc(1, (blob->size*2)+1);
+	for(i=0; i<blob->size; i++) {
+		n += sprintf(reincarnation+n, "%02x", blob->data[i]);
 	}
 	if(strcmp(hex, reincarnation) != 0) { fprintf(stderr, "Reincarnation Validation Failed!\n"); g_shutdown = 1; exit(1); }
+	free(reincarnation);
 #endif
 }
 
@@ -89,9 +88,7 @@ static void handle_json(zmq_mf_t **mpa, void *user_data)
 #ifdef PUBCODE
 static void publish_json(unsigned int dst, struct timespec *now)
 {
-	int i, n;
-	unsigned int r;
-	char zbuf[1500];
+	char zbuf[1600];
 
 	// Create JSON object and insert DST address
 	cJSON *root = cJSON_CreateObject();
@@ -102,17 +99,14 @@ static void publish_json(unsigned int dst, struct timespec *now)
 	(void)cJSON_AddStringToObject(root, "Timestamp", zbuf);
 
 	// Mock Binary Data
-	for(i=0; i<1024; i+=4) {
-		r = rand();
-		memcpy(&zbuf[i], &r, 4);
-	}
+	unsigned int b = fill_payload((unsigned char *)&zbuf[0], sizeof(zbuf), 1024, 512);
 
-	n = 0;
-	char *hex = malloc((1500*2)+1);
-	for(i=0; i<1500; i++) {
+	unsigned int i, n = 0;
+	char *hex = malloc((b*2)+1);
+	for(i=0; i<b; i++) {
 		n += sprintf(hex+n, "%02x", (unsigned char)zbuf[i]);
 	}
-	(void)cJSON_AddNumberToObject(root, "PayloadLen", 1500);
+	(void)cJSON_AddNumberToObject(root, "PayloadLen", b);
 	(void)cJSON_AddStringToObject(root, "PayloadHex", hex);
 
 	// Publish the JSON message

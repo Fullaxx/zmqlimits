@@ -39,8 +39,6 @@ static void handle_mpm(zmq_mf_t **mpa)
 	if(!ts_msg) { return; }
 	if(!binary_msg) { return; }
 
-	if(binary_msg->size != 1500) { fprintf(stderr, "INVALID SIZE!\n"); g_shutdown = 1; exit(1); }
-
 	// Do something with the data
 	check_for_jackpot(binary_msg->buf, binary_msg->size);
 }
@@ -60,9 +58,7 @@ static void handle_mpm(zmq_mf_t **mpa)
 */
 static void publish_mpm(unsigned int dst, struct timespec *now)
 {
-	size_t z;
-	unsigned int r;
-	char zbuf[1500];
+	char zbuf[1600];
 
 	// Set the dst address
 	snprintf(zbuf, sizeof(zbuf), "%u", dst);
@@ -73,10 +69,7 @@ static void publish_mpm(unsigned int dst, struct timespec *now)
 	as_zmq_pub_send(g_pktpub, zbuf, strlen(zbuf)+1, 1);
 
 	// Mock Binary Data
-	for(z=0; z<1024; z+=4) {
-		r = rand();
-		memcpy(&zbuf[z], &r, 4);
-	}
-	as_zmq_pub_send(g_pktpub, zbuf, sizeof(zbuf), 0);
+	unsigned int b = fill_payload((unsigned char *)&zbuf[0], sizeof(zbuf), 1024, 512);
+	as_zmq_pub_send(g_pktpub, zbuf, b, 0);
 }
 #endif

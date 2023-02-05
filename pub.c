@@ -61,6 +61,18 @@ static void sig_handler(int signum)
 	}
 }
 
+static inline unsigned int fill_payload(unsigned char *buf, unsigned int bufsize, int chance, int min)
+{
+	unsigned int z, r;
+	unsigned int range = (rand()%chance) + min;
+	if(range+4 >= bufsize) { fprintf(stderr, "fill_payload() failed!\n"); exit(1); }
+	for(z=0; z<range; z+=4) {
+		r = rand();
+		memcpy(buf+z, &r, 4);
+	}
+	return z;
+}
+
 #include "mpm_fmt.h"
 #include "json_fmt.h"
 
