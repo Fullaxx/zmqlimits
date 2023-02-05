@@ -1,5 +1,13 @@
 # zmqlimits
 
+## Code Layout
+| File                     | Purpose                   |
+|--------------------------|---------------------------|
+| [pub.c](pub.c)           | Shared Publisher code     |
+| [sub.c](sub.c)           | Shared Subscriber code    |
+| [mpm_fmt.h](mpm_fmt.h)   | Multi-Part Message format |
+| [json_fmt.h](json_fmt.h) | JSON Message format       |
+
 ## Compile the code
 ```
 ./compile.sh
