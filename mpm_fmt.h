@@ -56,9 +56,9 @@ static void handle_mpm(zmq_mf_t **mpa)
 
 	as_zmq_pub_send(g_pktpub, buf, len, 0);
 */
-static void publish_mpm(unsigned int dst, struct timespec *now)
+static void publish_mpm(unsigned int dst, struct timespec *now, unsigned char *data, unsigned int dlen)
 {
-	char zbuf[1600];
+	char zbuf[128];
 
 	// Set the dst address
 	snprintf(zbuf, sizeof(zbuf), "%u", dst);
@@ -68,8 +68,7 @@ static void publish_mpm(unsigned int dst, struct timespec *now)
 	snprintf(zbuf, sizeof(zbuf), "%ld.%09ld", now->tv_sec, now->tv_nsec);
 	as_zmq_pub_send(g_pktpub, zbuf, strlen(zbuf)+1, 1);
 
-	// Mock Binary Data
-	unsigned int b = fill_payload((unsigned char *)&zbuf[0], sizeof(zbuf), 1024, 512);
-	as_zmq_pub_send(g_pktpub, zbuf, b, 0);
+	// Binary Data
+	as_zmq_pub_send(g_pktpub, data, dlen, 0);
 }
 #endif

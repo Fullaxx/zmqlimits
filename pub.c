@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <errno.h>
 #include <time.h>
 #include <signal.h>
 
@@ -61,11 +60,14 @@ static void sig_handler(int signum)
 	}
 }
 
-static inline unsigned int fill_payload(unsigned char *buf, unsigned int bufsize, int chance, int min)
+#include "mpm_fmt.h"
+#include "json_fmt.h"
+
+static inline unsigned int fill_payload(unsigned char *buf, unsigned int bufsize, int min, int max)
 {
 	unsigned int z, r;
-	unsigned int range = (rand()%chance) + min;
-	if(range+4 >= bufsize) { fprintf(stderr, "fill_payload() failed!\n"); exit(1); }
+	unsigned int range = (rand()%min) + (max-min);
+	if(range+4 >= bufsize) { fprintf(stderr, "fill_payload() failed!\n"); g_shutdown = 1; exit(1); }
 	for(z=0; z<range; z+=4) {
 		r = rand();
 		memcpy(buf+z, &r, 4);
@@ -73,14 +75,25 @@ static inline unsigned int fill_payload(unsigned char *buf, unsigned int bufsize
 	return z;
 }
 
-#include "mpm_fmt.h"
-#include "json_fmt.h"
+static inline void publish_message(struct timespec *now)
+{
+	unsigned char bindata[1600];
+
+	// Create a DST address
+	unsigned int dst = (rand() % g_maxdst) + 1;
+
+	// Mock Binary Data
+	unsigned int b = fill_payload(&bindata[0], sizeof(bindata), 1024, 1536);
+
+	// Publish using MPM or JSON
+	if(g_mpm) { publish_mpm(dst, now, &bindata[0], b); }
+	if(g_json) { publish_json(dst, now, &bindata[0], b); }
+	g_zmqmsgs++;
+}
 
 static void publisher_loop(void)
 {
 	long this_sec;
-	unsigned int r;
-	unsigned int dst;
 	struct timespec now;
 	unsigned int msgsthissec;
 
@@ -90,11 +103,7 @@ static void publisher_loop(void)
 	while(!g_shutdown) {
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		if(msgsthissec < g_pps) {
-			r = rand();
-			dst = (r % g_maxdst) + 1;
-			if(g_mpm) { publish_mpm(dst, &now); }
-			if(g_json) { publish_json(dst, &now); }
-			g_zmqmsgs++;
+			publish_message(&now);
 			msgsthissec++;
 		} else {
 			// Wait for the second hand to rollover
@@ -135,7 +144,6 @@ int main(int argc, char *argv[])
 		g_pktpub = NULL;
 	}
 
-	//fclose(f);
 	if(g_zmqsockaddr) { free(g_zmqsockaddr); }
 
 	return 0;

@@ -86,9 +86,9 @@ static void handle_json(zmq_mf_t **mpa, void *user_data)
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifdef PUBCODE
-static void publish_json(unsigned int dst, struct timespec *now)
+static void publish_json(unsigned int dst, struct timespec *now, unsigned char *data, unsigned int dlen)
 {
-	char zbuf[1600];
+	char zbuf[128];
 
 	// Create JSON object and insert DST address
 	cJSON *root = cJSON_CreateObject();
@@ -98,15 +98,13 @@ static void publish_json(unsigned int dst, struct timespec *now)
 	snprintf(zbuf, sizeof(zbuf), "%ld.%09ld", now->tv_sec, now->tv_nsec);
 	(void)cJSON_AddStringToObject(root, "Timestamp", zbuf);
 
-	// Mock Binary Data
-	unsigned int b = fill_payload((unsigned char *)&zbuf[0], sizeof(zbuf), 1024, 512);
-
+	// Convert Binary to Hex String
 	unsigned int i, n = 0;
-	char *hex = malloc((b*2)+1);
-	for(i=0; i<b; i++) {
-		n += sprintf(hex+n, "%02x", (unsigned char)zbuf[i]);
+	char *hex = malloc((dlen*2)+1);
+	for(i=0; i<dlen; i++) {
+		n += sprintf(hex+n, "%02x", data[i]);
 	}
-	(void)cJSON_AddNumberToObject(root, "PayloadLen", b);
+	(void)cJSON_AddNumberToObject(root, "PayloadLen", dlen);
 	(void)cJSON_AddStringToObject(root, "PayloadHex", hex);
 
 	// Publish the JSON message
