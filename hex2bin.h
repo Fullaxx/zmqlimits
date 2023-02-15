@@ -10,7 +10,8 @@ typedef struct bin_pkg {
 	ssize_t size;
 } bin_pkg_t;
 
-bin_pkg_t hex2bin(char *hex);
+bin_pkg_t* hex2bin(char *hex);
+void destroy_binpkg(bin_pkg_t *r);
 
 #ifdef __cplusplus
 }

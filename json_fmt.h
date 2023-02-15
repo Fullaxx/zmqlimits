@@ -51,18 +51,15 @@ static inline void dbg_validate_hex_decode(char *hex, bin_pkg_t *blob)
 static void check_hex_payload(char *hex, int plen)
 {
 	// Decode our hex payload
-	bin_pkg_t blob = hex2bin(hex);
-	if(!blob.data || (blob.size < 1)) { fprintf(stderr, "hex2bin() failed decode!\n"); g_shutdown = 1; exit(1); }
-	if(blob.size != plen) { fprintf(stderr, "blob.size != plen!\n"); g_shutdown = 1; exit(1); }
-
-	// Validate the decode process
-	dbg_validate_hex_decode(hex, &blob);
+	bin_pkg_t *blob = hex2bin(hex);
+	if(!blob || !blob->data || (blob->size < 1)) { fprintf(stderr, "hex2bin() failed decode!\n"); g_shutdown = 1; exit(1); }
+	if(blob->size != plen) { fprintf(stderr, "blob->size != plen!\n"); g_shutdown = 1; exit(1); }
 
 	// Do something with the data
-	check_for_jackpot(blob.data, blob.size);
+	check_for_jackpot(blob->data, blob->size);
 
 	// Clean up
-	free(blob.data);
+	destroy_binpkg(blob);
 }
 
 static inline void dbg_print_msg_dst(int dst)
