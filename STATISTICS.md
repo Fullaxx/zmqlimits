@@ -24,16 +24,30 @@ RATE=150000 : ~99% CPU usage on Intel(R) Core(TM) i7-4610M CPU @ 3.00GHz
 ./sub.exe -m -d 8 -Z tcp://localhost:9999
 ```
 
-## JSON to 1 destination
+## Hex JSON to 1 destination
 RATE=7000   : PUB pegged & SUB backlogged on Intel(R) Core(TM) i7-4610M CPU @ 3.00GHz
 ```
 ./pub.exe -j -Z tcp://*:9999 -r RATE
 ./sub.exe -j -Z tcp://localhost:9999
 ```
 
-## JSON to 8 destinations
+## Hex JSON to 8 destinations
 RATE=4500   : PUB pegged on Intel(R) Core(TM) i7-4610M CPU @ 3.00GHz
 ```
 ./pub.exe -j -d 8 -Z tcp://*:9999 -r RATE
+./sub.exe -j -d 8 -Z tcp://localhost:9999
+```
+
+## Base64 JSON to 1 destination
+RATE=42000   : PUB pegged on Intel(R) Core(TM) i7-4610M CPU @ 3.00GHz
+```
+./pub.exe -j -Z tcp://*:9999 -r RATE --b64
+./sub.exe -j -Z tcp://localhost:9999
+```
+
+## Base64 JSON to 8 destinations
+RATE=32000   : PUB pegged & SUB backlogged on Intel(R) Core(TM) i7-4610M CPU @ 3.00GHz
+```
+./pub.exe -j -d 8 -Z tcp://*:9999 -r RATE --b64
 ./sub.exe -j -d 8 -Z tcp://localhost:9999
 ```

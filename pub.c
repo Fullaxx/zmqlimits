@@ -25,6 +25,7 @@
 #include "cJSON.h"
 #include "getopts.h"
 #include "async_zmq_pub.h"
+#include "libbase64.h"
 
 // Prototypes
 static void parse_args(int argc, char **argv);
@@ -37,6 +38,7 @@ zmq_pub_t *g_pktpub = NULL;
 long g_pps = 10000;
 int g_mpm = 0;
 int g_json = 0;
+int g_base64 = 0;
 int g_maxdst = 1;
 
 unsigned long g_zmqmsgs = 0;
@@ -151,12 +153,13 @@ int main(int argc, char *argv[])
 
 struct options opts[] = 
 {
-	{ 1, "ZMQ",		"Set the ZMQ PUB",			"Z",  1 },
-	{ 2, "DST",		"Set Max Destinations",		"d",  1 },
-	{ 3, "MPM",		"Use multipart messages",	"m",  0 },
-	{ 4, "JSON",	"Use JSON messages",		"j",  0 },
-	{ 9, "PPS",		"Set the target PPS",		"r",  1 },
-	{ 0, NULL,		NULL,						NULL, 0 }
+	{ 1, "ZMQ",		"Set the ZMQ PUB",					"Z",  1 },
+	{ 2, "DST",		"Set Max Destinations",				"d",  1 },
+	{ 3, "MPM",		"Use multipart messages",			"m",  0 },
+	{ 4, "JSON",	"Use JSON messages",				"j",  0 },
+	{ 6, "b64",		"Use base64 encoded JSON messages",	NULL,  0 },
+	{ 9, "PPS",		"Set the target PPS",				"r",  1 },
+	{ 0, NULL,		NULL,								NULL, 0 }
 };
 
 static void parse_args(int argc, char **argv)
@@ -186,6 +189,9 @@ static void parse_args(int argc, char **argv)
 				break;
 			case 4:
 				g_json = 1;
+				break;
+			case 6:
+				g_base64 = 1;
 				break;
 			case 9:
 				g_pps = atol(args);

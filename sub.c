@@ -25,6 +25,7 @@
 #include "cJSON.h"
 #include "getopts.h"
 #include "async_zmq_sub.h"
+#include "libbase64.h"
 #include "hex2bin.h"
 
 // Prototypes

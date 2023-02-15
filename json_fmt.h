@@ -16,7 +16,26 @@
 */
 
 #ifdef SUBCODE
-static inline void dbg_validate_decode(char *hex, bin_pkg_t *blob)
+//#include "pthread.h"
+//pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static void check_b64_payload(char *b64, int plen)
+{
+	size_t msglen = strlen(b64);
+	unsigned char *msg = malloc(msglen);
+//pthread_mutex_lock(&mutex);
+	int z = base64_decode(b64, strlen(b64), (char *)msg, &msglen, 0);
+//pthread_mutex_unlock(&mutex);
+	if(msglen != plen) { fprintf(stderr, "msglen != plen!\n"); g_shutdown = 1; exit(1); }
+	if(z == -1) { fprintf(stderr, "base64_decode() codec error!\n"); g_shutdown = 1; exit(1); }
+	if(z == 0) { fprintf(stderr, "base64_decode() input error!\nstring: %s\n", b64); g_shutdown = 1; exit(1); }
+
+	// Do something with the data
+	check_for_jackpot(msg, msglen);
+
+	free(msg);
+}
+
+static inline void dbg_validate_hex_decode(char *hex, bin_pkg_t *blob)
 {
 #ifdef DEBUG
 	unsigned int i, n = 0;
@@ -29,7 +48,7 @@ static inline void dbg_validate_decode(char *hex, bin_pkg_t *blob)
 #endif
 }
 
-static void check_payload(char *hex, int plen)
+static void check_hex_payload(char *hex, int plen)
 {
 	// Decode our hex payload
 	bin_pkg_t blob = hex2bin(hex);
@@ -37,7 +56,7 @@ static void check_payload(char *hex, int plen)
 	if(blob.size != plen) { fprintf(stderr, "blob.size != plen!\n"); g_shutdown = 1; exit(1); }
 
 	// Validate the decode process
-	dbg_validate_decode(hex, &blob);
+	dbg_validate_hex_decode(hex, &blob);
 
 	// Do something with the data
 	check_for_jackpot(blob.data, blob.size);
@@ -75,8 +94,14 @@ static void handle_json(zmq_mf_t **mpa, void *user_data)
 		dbg_print_msg_dst(dst_obj->valueint);
 		cJSON *plen_obj = cJSON_GetObjectItemCaseSensitive(root, "PayloadLen");
 		cJSON *phex_obj = cJSON_GetObjectItemCaseSensitive(root, "PayloadHex");
-		if(cJSON_IsString(phex_obj) && cJSON_IsNumber(plen_obj)) {
-			check_payload(phex_obj->valuestring, plen_obj->valueint);
+		cJSON *pb64_obj = cJSON_GetObjectItemCaseSensitive(root, "PayloadB64");
+		if(cJSON_IsNumber(plen_obj)) {
+			if(cJSON_IsString(phex_obj)) {
+				check_hex_payload(phex_obj->valuestring, plen_obj->valueint);
+			}
+			if(cJSON_IsString(pb64_obj)) {
+				check_b64_payload(pb64_obj->valuestring, plen_obj->valueint);
+			}
 		}
 	}
 	cJSON_Delete(root);
@@ -86,6 +111,28 @@ static void handle_json(zmq_mf_t **mpa, void *user_data)
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifdef PUBCODE
+static inline void add_b64_message(cJSON *root, unsigned char *data, unsigned int dlen)
+{
+	size_t outlen = (dlen*4)+1;
+	char *b64 = calloc(1, outlen);
+	base64_encode((char *)data, dlen, b64, &outlen, 0);
+	(void)cJSON_AddStringToObject(root, "PayloadB64", b64);
+	free(b64);
+}
+
+static inline void add_hex_message(cJSON *root, unsigned char *data, unsigned int dlen)
+{
+	// Convert Binary to Hex String
+	unsigned int i, n = 0;
+	char *hex = malloc((dlen*2)+1);
+	for(i=0; i<dlen; i++) {
+		n += sprintf(hex+n, "%02x", data[i]);
+	}
+
+	(void)cJSON_AddStringToObject(root, "PayloadHex", hex);
+	free(hex);
+}
+
 static void publish_json(unsigned int dst, struct timespec *now, unsigned char *data, unsigned int dlen)
 {
 	char zbuf[128];
@@ -98,14 +145,12 @@ static void publish_json(unsigned int dst, struct timespec *now, unsigned char *
 	snprintf(zbuf, sizeof(zbuf), "%ld.%09ld", now->tv_sec, now->tv_nsec);
 	(void)cJSON_AddStringToObject(root, "Timestamp", zbuf);
 
-	// Convert Binary to Hex String
-	unsigned int i, n = 0;
-	char *hex = malloc((dlen*2)+1);
-	for(i=0; i<dlen; i++) {
-		n += sprintf(hex+n, "%02x", data[i]);
-	}
 	(void)cJSON_AddNumberToObject(root, "PayloadLen", dlen);
-	(void)cJSON_AddStringToObject(root, "PayloadHex", hex);
+	if(g_base64) {
+		add_b64_message(root, data, dlen);
+	} else {
+		add_hex_message(root, data, dlen);
+	}
 
 	// Publish the JSON message
 	char *minjson = cJSON_Print(root);
@@ -113,7 +158,6 @@ static void publish_json(unsigned int dst, struct timespec *now, unsigned char *
 	as_zmq_pub_send(g_pktpub, minjson, strlen(minjson)+1, 0);
 
 	// Clean up
-	free(hex);
 	free(minjson);
 	cJSON_Delete(root);
 }
