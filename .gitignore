@@ -2,3 +2,5 @@
 *.o
 *.exe
 *.dbg
+base64/bin/base64
+base64/lib/config.h
